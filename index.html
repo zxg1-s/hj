@@ -1,524 +1,443 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>VORTX • OFFICIAL MULTIVERSE ARCHIVE</title>
-<style>
-  :root {
-    --neon-cyan: #67e8f9;
-    --neon-purple: #c084fc;
-    --neon-pink: #f472b6;
-    --deep-space: #0a0a1f;
-  }
+    <meta charset="utf-8">
+    <title>Crazy Chicken 3D</title>
+    <meta name="description" content="Become a fighting chicken in Crazy Chicken 3D">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <style>
+        body { margin:0; overflow:hidden; background:#000; font-family:Arial, sans-serif; color:white; }
+        canvas { display:block; }
+        #ui { position:absolute; top:10px; left:10px; z-index:100; pointer-events:none; }
+        #ui h1 { margin:0; font-size:28px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
+        #status { margin:5px 0; font-size:18px; }
+        #coins { position:absolute; top:10px; right:120px; background:rgba(0,0,0,0.7); padding:8px 16px; border-radius:8px; font-size:18px; }
+        #level { position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.6); padding:8px 16px; border-radius:8px; font-size:18px; }
+        #instructions { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.7); padding:12px 24px; border-radius:10px; text-align:center; font-size:15px; }
+        
+        button { padding:10px 20px; font-size:18px; margin:5px; cursor:pointer; background:#ffaa00; border:none; border-radius:8px; color:black; font-weight:bold; }
+        #shop-btn { position:absolute; top:70px; left:10px; z-index:101; pointer-events:auto; }
 
-  * { margin:0; padding:0; box-sizing:border-box; }
-  
-  body {
-    height: 100vh;
-    overflow: hidden;
-    background: radial-gradient(circle at center, #0a0a1f 0%, #000 80%);
-    color: #eee;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    cursor: none;
-    position: relative;
-  }
-
-  /* Subtle vignette for official NASA-level depth */
-  body::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at center, transparent 60%, rgba(0,0,0,0.7) 100%);
-    pointer-events: none;
-    z-index: 6;
-  }
-
-  /* Top Official Header */
-  .header {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    height: 68px;
-    background: rgba(10,10,31,0.85);
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(103,232,249,0.2);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 40px;
-    z-index: 999;
-    font-size: 1.05rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-  .header .logo { font-weight: 900; font-size: 1.6rem; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple)); -webkit-background-clip: text; color: transparent; }
-
-  /* Universes */
-  .universe {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    transition: opacity 2.6s cubic-bezier(0.23,1,0.32,1);
-    pointer-events: none;
-  }
-  .universe.active { opacity: 1; pointer-events: auto; }
-
-  .stars { position: absolute; inset: 0; z-index: 1; }
-
-  /* Planets - Ultra Premium */
-  .planets { position: absolute; inset: 0; z-index: 3; }
-  .planet-container {
-    position: absolute;
-    width: var(--size);
-    height: var(--size);
-    cursor: pointer;
-    transition: all 0.8s cubic-bezier(0.34,1.56,0.64,1);
-  }
-  .planet-container:hover { 
-    transform: scale(1.45) rotate(15deg); 
-    filter: brightness(1.15) drop-shadow(0 0 60px var(--neon-cyan));
-  }
-  .planet {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
-    box-shadow: 0 0 60px rgba(103,232,249,0.8),
-                0 0 110px rgba(192,132,252,0.6),
-                inset 0 0 40px rgba(255,255,255,0.3);
-  }
-
-  /* Black Hole - Singularity Level */
-  .black-hole {
-    position: absolute;
-    left: 50%; top: 50%;
-    width: 400px; height: 400px;
-    transform: translate(-50%, -50%);
-    background: url('https://svs.gsfc.nasa.gov/vis/a000000/a001400/a001419/black_hole_accretion_disk.jpg') center/cover;
-    border-radius: 50%;
-    box-shadow: 0 0 220px #ffaa00, 0 0 440px #ff5500, inset 0 0 140px #111;
-    animation: bh-ultra 6s infinite alternate ease-in-out;
-    cursor: pointer;
-    transition: all 0.5s;
-  }
-  .black-hole:hover { 
-    transform: translate(-50%, -50%) scale(1.18) rotate(8deg); 
-    box-shadow: 0 0 300px #ffaa00, 0 0 600px #ffaa00;
-  }
-  @keyframes bh-ultra {
-    from { box-shadow: 0 0 180px #ffaa00, 0 0 380px #ff5500; }
-    to   { box-shadow: 0 0 260px #ffaa00, 0 0 520px #ff5500; }
-  }
-
-  /* Neon Cursor - Official Glow */
-  .custom-cursor {
-    position: fixed;
-    width: 46px; height: 46px;
-    pointer-events: none; z-index: 9999;
-    transform: translate(-50%, -50%);
-    mix-blend-mode: screen;
-  }
-  .cursor-core {
-    width: 100%; height: 100%;
-    border-radius: 50%;
-    background: radial-gradient(circle at 30% 30%, #fff, var(--neon-cyan), transparent 78%);
-    box-shadow: 0 0 50px var(--neon-cyan), 0 0 100px var(--neon-purple);
-    animation: cursor-ultra 2s infinite ease-in-out;
-  }
-  @keyframes cursor-ultra { 0%,100% {transform:scale(1);} 50% {transform:scale(1.48);} }
-
-  /* Main Content */
-  .content {
-    position: relative; z-index: 10;
-    height: 100vh;
-    display: flex; flex-direction: column;
-    justify-content: center; align-items: center;
-    text-align: center; padding: 0 20px;
-    pointer-events: none;
-  }
-  .content > * { pointer-events: auto; }
-
-  h1 {
-    font-size: clamp(5.5rem, 18vw, 14rem);
-    font-weight: 900;
-    letter-spacing: -0.09em;
-    background: linear-gradient(90deg, #67e8f9, #a5b4fc, #c084fc, #f472b6);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    background-size: 400% 100%;
-    animation: title-ultra 9s linear infinite;
-    text-shadow: 0 0 40px var(--neon-cyan),
-                 0 0 80px var(--neon-purple),
-                 0 0 140px rgba(244,114,182,0.6);
-  }
-  @keyframes title-ultra { 0% {background-position:0% 50%} 100% {background-position:400% 50%} }
-
-  .subtitle {
-    font-size: 1.65rem;
-    max-width: 920px;
-    opacity: 0.93;
-    line-height: 1.9;
-    margin: 1.2rem 0 3rem;
-    font-weight: 400;
-  }
-
-  .btn {
-    padding: 22px 52px;
-    font-size: 1.45rem;
-    font-weight: 600;
-    background: rgba(103,232,249,0.09);
-    border: 3px solid var(--neon-cyan);
-    border-radius: 60px;
-    color: white;
-    cursor: pointer;
-    transition: all 0.6s cubic-bezier(0.23,1,0.32,1);
-    box-shadow: 0 0 50px rgba(103,232,249,0.7);
-    letter-spacing: 0.05em;
-  }
-  .btn:hover {
-    background: var(--neon-cyan);
-    color: #000;
-    transform: scale(1.15);
-    box-shadow: 0 0 90px var(--neon-cyan);
-  }
-
-  /* Planet & Black Hole Info Panels */
-  #planet-info, #famous-modal {
-    position: fixed; inset: 0;
-    background: rgba(3,4,20,0.96);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    backdrop-filter: blur(16px);
-  }
-  .info-box, .modal-content {
-    background: rgba(10,12,35,0.96);
-    border: 3px solid var(--neon-cyan);
-    border-radius: 32px;
-    padding: 3.5rem 3.2rem;
-    max-width: 740px;
-    width: 94%;
-    box-shadow: 0 0 160px rgba(103,232,249,0.85);
-    position: relative;
-  }
-  .info-box h2 {
-    font-size: 3.8rem;
-    color: var(--neon-cyan);
-    margin-bottom: 1.6rem;
-    text-shadow: 0 0 50px var(--neon-cyan);
-  }
-  .info-box p { font-size: 1.45rem; line-height: 1.95; }
-
-  /* Famous Modal - Official Hall of Legends */
-  .modal-content {
-    max-width: 1080px;
-    padding: 3.5rem;
-    max-height: 94vh;
-    overflow-y: auto;
-  }
-  .modal-content h2 {
-    text-align: center;
-    font-size: 3.6rem;
-    margin-bottom: 2.8rem;
-    background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple));
-    -webkit-background-clip: text;
-    color: transparent;
-  }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-    gap: 2rem;
-  }
-  .legend {
-    display: flex;
-    gap: 1.8rem;
-    background: rgba(255,255,255,0.06);
-    padding: 1.8rem;
-    border-radius: 24px;
-    border-left: 8px solid var(--neon-cyan);
-    transition: all 0.4s ease;
-  }
-  .legend:hover {
-    transform: translateY(-12px);
-    box-shadow: 0 0 60px rgba(103,232,249,0.5);
-  }
-  .legend img {
-    width: 110px;
-    height: 110px;
-    object-fit: cover;
-    border-radius: 50%;
-    border: 3px solid var(--neon-purple);
-    box-shadow: 0 0 30px rgba(192,132,252,0.6);
-  }
-  .legend .info {
-    flex: 1;
-  }
-  .legend h3 { 
-    font-size: 1.65rem; 
-    color: var(--neon-purple); 
-    margin-bottom: 0.3rem;
-  }
-  .legend small { opacity: 0.75; font-size: 1rem; }
-  .legend p { margin-top: 1rem; font-size: 1.1rem; line-height: 1.7; }
-
-  .close-btn {
-    position: absolute; top: 28px; right: 38px;
-    font-size: 3.8rem; color: #777; cursor: pointer;
-    transition: color 0.3s;
-  }
-  .close-btn:hover { color: var(--neon-cyan); }
-
-  /* Particles */
-  #particles { position: absolute; inset: 0; pointer-events: none; z-index: 7; }
-</style>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
+        /* Shop Modal */
+        #shop { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:#222; padding:20px; border-radius:15px; width:620px; max-height:85vh; overflow-y:auto; display:none; z-index:200; box-shadow:0 0 30px rgba(255,170,0,0.6); }
+        #shop h2 { text-align:center; margin:10px; color:#ffaa00; }
+        .skin-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:15px; }
+        .skin-card { background:#333; border-radius:12px; padding:10px; text-align:center; cursor:pointer; transition:0.2s; }
+        .skin-card:hover { transform:scale(1.05); background:#444; }
+        .skin-card.locked { opacity:0.6; }
+        .skin-card img, .skin-preview { width:100%; height:120px; background:#111; border-radius:8px; }
+        .skin-name { margin:8px 0 4px; font-weight:bold; }
+        .skin-price { color:#ffdd00; font-size:15px; }
+        .equipped { border:3px solid #00ff00 !important; }
+    </style>
 </head>
 <body>
-
-  <!-- Official Header -->
-  <div class="header">
-    <div class="logo">VORTX</div>
-    <div>OFFICIAL MULTIVERSE ARCHIVE • 2026</div>
-  </div>
-
-  <!-- Universes -->
-  <div class="universe active" id="u1">
-    <div class="stars" id="stars1"></div>
-    <div class="planets" id="planets"></div>
-  </div>
-  <div class="universe" id="u2"><div class="stars" id="stars2"></div></div>
-  <div class="universe" id="u3"><div class="stars" id="stars3"></div></div>
-  <div class="universe" id="u4">
-    <div class="stars" id="stars4"></div>
-    <div class="black-hole" id="blackhole"></div>
-  </div>
-
-  <!-- Particles -->
-  <div id="particles"></div>
-
-  <!-- Cursor -->
-  <div class="custom-cursor" id="cursor"><div class="cursor-core"></div></div>
-
-  <!-- Main Content -->
-  <div class="content">
-    <h1>VORTX</h1>
-    <p class="subtitle">
-      The official gateway to the multiverse.<br>
-      Click space to travel • Click planets to explore • Click the black hole to enter the singularity
-    </p>
-    <button class="btn" id="famous-btn">HALL OF COSMIC LEGENDS</button>
-  </div>
-
-  <!-- Planet Info -->
-  <div id="planet-info">
-    <div class="info-box">
-      <span class="close-btn" onclick="closePlanetInfo()">×</span>
-      <h2 id="info-title"></h2>
-      <p id="info-desc"></p>
+    <div id="ui">
+        <h1>Crazy Chicken 3D</h1>
+        <div id="status">Score: 0 | Alive: 8</div>
     </div>
-  </div>
+    <div id="coins">Coins: <span id="coin-count">0</span></div>
+    <div id="level">Level: Ireland</div>
+    
+    <button id="shop-btn" onclick="toggleShop()">🛒 Shop</button>
 
-  <!-- Famous Modal - Hall of Legends with Portraits -->
-  <div id="famous-modal">
-    <div class="modal-content">
-      <span class="close-btn" onclick="closeFamousModal()" style="float:right;">×</span>
-      <h2>HALL OF COSMIC LEGENDS</h2>
-      <div class="grid" id="legends-grid"></div>
+    <div id="instructions">
+        W/↑ Forward • A/D or ←/→ Turn • S/↓ Back<br>
+        Mouse to look • Knock others off! Last one wins!
     </div>
-  </div>
 
-  <!-- Audio -->
-  <audio id="ambient" loop autoplay volume="0.28">
-    <source src="https://freesound.org/data/previews/612/612095_5674468-lq.mp3" type="audio/mpeg">
-  </audio>
-  <audio id="whoosh" src="https://freesound.org/data/previews/276/276952_5121236-lq.mp3"></audio>
-  <audio id="burst" src="https://freesound.org/data/previews/387/387962_7256635-lq.mp3"></audio>
+    <!-- Win Screen -->
+    <div id="win" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.9); padding:30px 50px; border-radius:15px; text-align:center; display:none; z-index:200;">
+        <h2>YOU WIN! 🏆</h2>
+        <p id="win-text"></p>
+        <button onclick="nextLevel()">Next Level</button>
+    </div>
 
-<script>
-// ====================== DATA WITH OFFICIAL PORTRAITS ======================
-const planetData = [ /* same as last version */ 
-  {id:"mercury", name:"Mercury", size:"58", left:"10%", top:"16%", desc:"Smallest planet. Extreme heat by day, freezing by night. No atmosphere."},
-  {id:"venus", name:"Venus", size:"85", left:"27%", top:"67%", desc:"Hottest planet in the Solar System. Toxic atmosphere and retrograde rotation."},
-  {id:"earth", name:"Earth", size:"95", left:"41%", top:"23%", desc:"Our living blue home. The only known planet with life."},
-  {id:"mars", name:"Mars", size:"72", left:"73%", top:"13%", desc:"The Red Planet. Tallest mountain in the Solar System and ancient water evidence."},
-  {id:"jupiter", name:"Jupiter", size:"178", left:"54%", top:"48%", desc:"Largest planet. Gas giant with the Great Red Spot storm."},
-  {id:"saturn", name:"Saturn", size:"162", left:"13%", top:"52%", desc:"Iconic ring system made of ice and rock."},
-  {id:"uranus", name:"Uranus", size:"105", left:"77%", top:"66%", desc:"Ice giant tilted on its side — extreme seasons."},
-  {id:"neptune", name:"Neptune", size:"99", left:"46%", top:"80%", desc:"Windiest planet with supersonic blue storms."}
-];
+    <!-- Game Over -->
+    <div id="gameover" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.9); padding:30px 50px; border-radius:15px; text-align:center; display:none; z-index:200;">
+        <h2>Game Over</h2>
+        <p>You were knocked out!</p>
+        <button onclick="restart()">Play Again</button>
+    </div>
 
-const legends = [
-  {name:"Galileo Galilei", years:"1564–1642", note:"First to use a telescope for astronomy. Discovered Jupiter’s moons and Venus phases.", img:"https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Justus_Sustermans_-_Portrait_of_Galileo_Galilei.jpg/800px-Justus_Sustermans_-_Portrait_of_Galileo_Galilei.jpg"},
-  {name:"Johannes Kepler", years:"1571–1630", note:"Discovered the three laws of planetary motion.", img:"https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Portrait_of_Johannes_Kepler.jpg/800px-Portrait_of_Johannes_Kepler.jpg"},
-  {name:"Isaac Newton", years:"1643–1727", note:"Formulated the law of universal gravitation.", img:"https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Portrait_of_Sir_Isaac_Newton%2C_1689.jpg/800px-Portrait_of_Sir_Isaac_Newton%2C_1689.jpg"},
-  {name:"Edwin Hubble", years:"1889–1953", note:"Proved the universe is expanding and galaxies exist beyond the Milky Way.", img:"https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Studio_portrait_photograph_of_Edwin_Powell_Hubble_%28cropped%29.JPG/800px-Studio_portrait_photograph_of_Edwin_Powell_Hubble_%28cropped%29.JPG"},
-  {name:"Carl Sagan", years:"1934–1996", note:"Visionary who popularized science and searched for extraterrestrial life.", img:"https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Carl_Sagan_Planetary_Society.JPG/800px-Carl_Sagan_Planetary_Society.JPG"},
-  {name:"Stephen Hawking", years:"1942–2018", note:"Revolutionized black hole physics and cosmology.", img:"https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Stephen_Hawking_050506.jpg/800px-Stephen_Hawking_050506.jpg"},
-  {name:"Vera Rubin", years:"1928–2016", note:"Provided the strongest evidence for dark matter.", img:"https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Vera_Rubin.jpg/800px-Vera_Rubin.jpg"},
-  {name:"Cecilia Payne-Gaposchkin", years:"1900–1979", note:"Discovered that stars are mostly hydrogen and helium.", img:"https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Cecilia_Helena_Payne-Gaposchkin_(1900-1979)_-_Science_Service.jpg/800px-Cecilia_Helena_Payne-Gaposchkin_(1900-1979)_-_Science_Service.jpg"},
-  {name:"Neil deGrasse Tyson", years:"1958–present", note:"World-renowned astrophysicist and science communicator.", img:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/2014_Neil_deGrasse_Tyson.jpg/800px-2014_Neil_deGrasse_Tyson.jpg"}
-];
+    <!-- Skin Shop -->
+    <div id="shop">
+        <h2>🐾 Skin Shop</h2>
+        <div class="skin-grid" id="skin-grid"></div>
+        <button onclick="toggleShop()" style="width:100%; margin-top:15px; background:#666;">Close Shop</button>
+    </div>
 
-// ====================== HELPERS ======================
-function createStars(id, count) {
-  const container = document.getElementById(id);
-  for (let i = 0; i < count; i++) {
-    const s = document.createElement('div');
-    const sz = Math.random() * 3.8 + 0.9;
-    s.style.cssText = `position:absolute; background:#fff; border-radius:50%; width:${sz}px; height:${sz}px;
-      left:${Math.random()*100}vw; top:${Math.random()*100}vh; opacity:${Math.random()*0.85+0.3};
-      box-shadow:0 0 ${sz*3.5}px #fff; animation:twinkle ${Math.random()*7+4}s infinite alternate;`;
-    container.appendChild(s);
-  }
-}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cannon@0.6.2/build/cannon.min.js"></script>
 
-function createParticles(x, y, color = '#67e8f9', count = 70) {
-  const container = document.getElementById('particles');
-  for (let i = 0; i < count; i++) {
-    const p = document.createElement('div');
-    const size = Math.random() * 8 + 4;
-    p.style.cssText = `position:absolute; left:${x}px; top:${y}px; width:${size}px; height:${size}px;
-      background:${color}; border-radius:50%; pointer-events:none; box-shadow:0 0 18px ${color};`;
-    
-    const angle = Math.random() * Math.PI * 2;
-    const vel = Math.random() * 260 + 120;
-    
-    p.animate([
-      { transform: 'translate(0,0) scale(1)', opacity: 1 },
-      { transform: `translate(${Math.cos(angle)*vel}px, ${Math.sin(angle)*vel}px) scale(0)`, opacity: 0 }
-    ], { duration: Math.random() * 1300 + 900, easing: 'cubic-bezier(0.25,0.1,0.25,1)' });
-    
-    container.appendChild(p);
-    setTimeout(() => p.remove(), 2800);
-  }
-}
+    <script>
+        // ============== GAME VARIABLES ==============
+        let scene, camera, renderer, world;
+        let playerMesh, playerBody;
+        let aiChickens = [];
+        let currentLevel = 0;
+        let score = 0;
+        let coins = 0;
+        let gameOverFlag = false;
+        let keys = {};
+        let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let currentSkin = "Chicken"; // default
 
-// ====================== PLANETS & BLACK HOLE ======================
-function createPlanets() {
-  const container = document.getElementById('planets');
-  planetData.forEach(p => {
-    const div = document.createElement('div');
-    div.className = 'planet-container';
-    div.style.left = p.left;
-    div.style.top = p.top;
-    div.style.setProperty('--size', p.size + 'px');
-    div.innerHTML = `<img class="planet" src="https://www.solarsystemscope.com/textures/download/2k_${p.id}.jpg" alt="${p.name}">`;
+        // Skin Database
+        const skins = [
+            { id: "Chicken", name: "Classic Chicken", color: 0xffaa00, price: 0, unlocked: true },
+            { id: "Rooster", name: "Fierce Rooster", color: 0xff5500, price: 150, unlocked: false },
+            { id: "Sheep", name: "Woolly Sheep", color: 0xeeeeee, price: 300, unlocked: false },
+            { id: "Cat", name: "Sneaky Cat", color: 0x5555ff, price: 400, unlocked: false },
+            { id: "Cow", name: "Crazy Cow", color: 0x442200, price: 250, unlocked: false },
+            { id: "Pig", name: "Chubby Pig", color: 0xff88aa, price: 200, unlocked: false }
+        ];
 
-    div.addEventListener('click', (e) => {
-      e.stopImmediatePropagation();
-      const rect = div.getBoundingClientRect();
-      const cx = rect.left + rect.width/2;
-      const cy = rect.top + rect.height/2;
+        const levels = [
+            { name: "Ireland", color: 0x3d8c40 },
+            { name: "Sweden", color: 0xaaaaaa },
+            { name: "Poland", color: 0x8b5a2b },
+            { name: "Ohio", color: 0x555555 },
+            { name: "Egypt", color: 0xd2b48c },
+            { name: "Secret Level", color: 0x330033 }
+        ];
 
-      createParticles(cx, cy, '#67e8f9', 75);
-      document.getElementById('burst').currentTime = 0;
-      document.getElementById('burst').play().catch(()=>{});
+        // Load saved data
+        function loadSave() {
+            const savedCoins = localStorage.getItem("crazyChickenCoins");
+            const savedSkins = localStorage.getItem("crazyChickenSkins");
+            const savedCurrent = localStorage.getItem("crazyChickenCurrentSkin");
+            
+            if (savedCoins) coins = parseInt(savedCoins);
+            if (savedSkins) {
+                const unlocked = JSON.parse(savedSkins);
+                skins.forEach(s => {
+                    if (unlocked.includes(s.id)) s.unlocked = true;
+                });
+            }
+            if (savedCurrent) currentSkin = savedCurrent;
+            
+            document.getElementById("coin-count").textContent = coins;
+        }
 
-      document.getElementById('info-title').textContent = p.name;
-      document.getElementById('info-desc').textContent = p.desc;
-      document.getElementById('planet-info').style.display = 'flex';
-    });
-    container.appendChild(div);
-  });
-}
+        function saveGame() {
+            localStorage.setItem("crazyChickenCoins", coins);
+            localStorage.setItem("crazyChickenSkins", JSON.stringify(skins.filter(s => s.unlocked).map(s => s.id)));
+            localStorage.setItem("crazyChickenCurrentSkin", currentSkin);
+        }
 
-document.getElementById('blackhole').addEventListener('click', (e) => {
-  const rect = e.target.getBoundingClientRect();
-  const cx = rect.left + rect.width/2;
-  const cy = rect.top + rect.height/2;
-  
-  createParticles(cx, cy, '#ffaa00', 110);
-  document.getElementById('burst').currentTime = 0;
-  document.getElementById('burst').play().catch(()=>{});
-  
-  alert("🌌 SINGULARITY ENTERED\n\nYou have crossed the event horizon.\nThe universe is grateful for your journey, stardust.");
-});
+        // ============== AUDIO ==============
+        function playSound(freq, duration, type = 'sine') {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.value = freq;
+            gain.gain.value = 0.25;
+            osc.connect(gain).connect(audioCtx.destination);
+            osc.start();
+            setTimeout(() => osc.stop(), duration);
+        }
 
-// ====================== HALL OF LEGENDS ======================
-function openFamousModal() {
-  const grid = document.getElementById('legends-grid');
-  grid.innerHTML = '';
-  legends.forEach(l => {
-    const card = document.createElement('div');
-    card.className = 'legend';
-    card.innerHTML = `
-      <img src="${l.img}" alt="${l.name}">
-      <div class="info">
-        <h3>${l.name}</h3>
-        <small>${l.years}</small>
-        <p>${l.note}</p>
-      </div>
-    `;
-    grid.appendChild(card);
-  });
-  document.getElementById('famous-modal').style.display = 'flex';
-}
+        // ============== CREATE CHICKEN WITH SKIN ==============
+        function createAnimal(skinId, isPlayer = false) {
+            const skin = skins.find(s => s.id === skinId) || skins[0];
+            const group = new THREE.Group();
 
-function closeFamousModal() {
-  document.getElementById('famous-modal').style.display = 'none';
-}
+            // Body
+            const body = new THREE.Mesh(
+                new THREE.BoxGeometry(1.9, 1.5, 2.4),
+                new THREE.MeshLambertMaterial({ color: skin.color })
+            );
+            body.position.y = 1.1;
+            body.castShadow = true;
+            group.add(body);
 
-function closePlanetInfo() {
-  document.getElementById('planet-info').style.display = 'none';
-}
+            // Head
+            const headColor = skinId === "Sheep" ? 0xdddddd : (skinId === "Pig" ? 0xff99bb : 0xff5555);
+            const head = new THREE.Mesh(
+                new THREE.SphereGeometry(0.75, 16, 16),
+                new THREE.MeshLambertMaterial({ color: headColor })
+            );
+            head.position.set(0, 2.4, 1.2);
+            group.add(head);
 
-// ====================== UNIVERSE CYCLE ======================
-let current = 1;
-const whoosh = document.getElementById('whoosh');
-const ambient = document.getElementById('ambient');
-ambient.volume = 0.28;
+            // Special features
+            if (skinId === "Rooster") {
+                const comb = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.2), new THREE.MeshLambertMaterial({color:0xff0000}));
+                comb.position.set(0, 3.1, 1.2);
+                group.add(comb);
+            } else if (skinId === "Sheep") {
+                // wool fluff
+                const fluff = new THREE.Mesh(new THREE.SphereGeometry(1.1, 12, 12), new THREE.MeshLambertMaterial({color:0xffffff}));
+                fluff.position.set(0, 1.8, 0);
+                group.add(fluff);
+            } else if (skinId === "Cat") {
+                const ear1 = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.6, 4), new THREE.MeshLambertMaterial({color:0x333366}));
+                ear1.position.set(-0.4, 3.0, 1.0);
+                ear1.rotation.z = 0.8;
+                group.add(ear1);
+                const ear2 = ear1.clone();
+                ear2.position.x = 0.4;
+                ear2.rotation.z = -0.8;
+                group.add(ear2);
+            }
 
-document.addEventListener('click', (e) => {
-  if (e.target.closest('.content') || 
-      e.target.closest('#planet-info') || 
-      e.target.closest('#famous-modal') ||
-      e.target.closest('.planet-container') ||
-      e.target.closest('.black-hole')) return;
+            if (isPlayer) group.userData.isPlayer = true;
+            return group;
+        }
 
-  whoosh.currentTime = 0;
-  whoosh.volume = 0.48;
-  whoosh.play().catch(()=>{});
+        // ============== SCENE SETUP ==============
+        function initScene() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x88ccff, 20, 120);
 
-  document.querySelector('.universe.active').classList.remove('active');
-  current = (current % 4) + 1;
-  document.getElementById(`u${current}`).classList.add('active');
-});
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 200);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
 
-// Cursor
-const cursor = document.getElementById('cursor');
-document.addEventListener('mousemove', e => {
-  cursor.style.left = e.clientX + 'px';
-  cursor.style.top = e.clientY + 'px';
-});
+            world = new CANNON.World();
+            world.gravity.set(0, -25, 0);
 
-// Init
-createStars('stars1', 380);
-createStars('stars2', 560);
-createStars('stars3', 210);
-createStars('stars4', 430);
+            const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambient);
+            const sun = new THREE.DirectionalLight(0xffffff, 1.1);
+            sun.position.set(25, 40, 25);
+            sun.castShadow = true;
+            scene.add(sun);
 
-createPlanets();
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
 
-document.getElementById('famous-btn').addEventListener('click', openFamousModal);
+            document.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+            document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+            renderer.domElement.addEventListener('click', () => renderer.domElement.requestPointerLock());
+        }
 
-// Keyboard
-document.addEventListener('keydown', e => {
-  if (e.key === "Escape") {
-    closePlanetInfo();
-    closeFamousModal();
-  }
-  if (e.key === " ") document.dispatchEvent(new Event('click'));
-});
-</script>
+        function createArena(levelIndex) {
+            while (scene.children.length > 2) scene.remove(scene.children[2]);
+            aiChickens.forEach(c => world.removeBody(c.body));
+            aiChickens = [];
 
-<style>
-@keyframes twinkle {
-  0% { opacity: 0.32; }
-  100% { opacity: 1; }
-}
-</style>
+            const lvl = levels[levelIndex];
+            document.getElementById('level').textContent = `Level: ${lvl.name}`;
 
+            // Ground
+            const ground = new THREE.Mesh(
+                new THREE.PlaneGeometry(60, 60),
+                new THREE.MeshLambertMaterial({ color: lvl.color })
+            );
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+            const groundBody = new CANNON.Body({ mass: 0, shape: new CANNON.Plane() });
+            groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
+            world.addBody(groundBody);
+
+            // Walls
+            const wallMat = new THREE.MeshLambertMaterial({ color: 0x555555 });
+            function addWall(x, z, w, d) {
+                const wall = new THREE.Mesh(new THREE.BoxGeometry(w, 6, d), wallMat);
+                wall.position.set(x, 3, z);
+                scene.add(wall);
+                const wb = new CANNON.Body({ mass: 0, shape: new CANNON.Box(new CANNON.Vec3(w/2, 3, d/2)) });
+                wb.position.set(x, 3, z);
+                world.addBody(wb);
+            }
+            addWall(0, -30, 60, 2); addWall(0, 30, 60, 2);
+            addWall(-30, 0, 2, 60); addWall(30, 0, 2, 60);
+
+            // Player
+            if (playerMesh) scene.remove(playerMesh);
+            playerMesh = createAnimal(currentSkin, true);
+            playerMesh.position.set(0, 1, 0);
+            scene.add(playerMesh);
+
+            if (playerBody) world.removeBody(playerBody);
+            playerBody = new CANNON.Body({
+                mass: 8,
+                shape: new CANNON.Box(new CANNON.Vec3(0.95, 0.9, 1.2)),
+                position: new CANNON.Vec3(0, 2, 0)
+            });
+            world.addBody(playerBody);
+
+            // AI opponents
+            const count = 8 + levelIndex * 2;
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 14 + Math.random() * 12;
+                const aiMesh = createAnimal("Chicken"); // AI always classic chicken
+                aiMesh.position.set(Math.cos(angle)*dist, 1, Math.sin(angle)*dist);
+                scene.add(aiMesh);
+
+                const aiBody = new CANNON.Body({
+                    mass: 6,
+                    shape: new CANNON.Box(new CANNON.Vec3(0.95, 0.9, 1.2)),
+                    position: new CANNON.Vec3(aiMesh.position.x, 2, aiMesh.position.z)
+                });
+                world.addBody(aiBody);
+                aiChickens.push({ mesh: aiMesh, body: aiBody, health: 100 });
+            }
+        }
+
+        function updateCamera() {
+            const ideal = new THREE.Vector3(0, 11, 20);
+            ideal.applyQuaternion(playerMesh.quaternion);
+            ideal.add(playerMesh.position);
+            camera.position.lerp(ideal, 0.1);
+            camera.lookAt(playerMesh.position.x, playerMesh.position.y + 3.5, playerMesh.position.z);
+        }
+
+        function checkCollisions() {
+            aiChickens = aiChickens.filter(ai => ai.health > 0);
+            aiChickens.forEach(ai => {
+                const dist = playerBody.position.distanceTo(ai.body.position);
+                if (dist < 3.2) {
+                    const dir = new CANNON.Vec3().copy(ai.body.position).vsub(playerBody.position).unit();
+                    ai.body.applyImpulse(dir.scale(50), ai.body.position);
+                    ai.health -= 30;
+                    playSound(150, 120, 'sawtooth');
+                    score += 15;
+                    coins += 3; // earn coins
+                    document.getElementById("coin-count").textContent = coins;
+                }
+                if (Math.abs(ai.body.position.x) > 28 || Math.abs(ai.body.position.z) > 28) {
+                    ai.health = 0;
+                    scene.remove(ai.mesh);
+                    world.removeBody(ai.body);
+                    playSound(700, 400);
+                }
+            });
+            saveGame();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (gameOverFlag) return;
+
+            world.step(1/60);
+
+            // Player movement
+            let moveX = 0, moveZ = 0;
+            if (keys['w'] || keys['arrowup']) moveZ = -1;
+            if (keys['s'] || keys['arrowdown']) moveZ = 1;
+            if (keys['a'] || keys['arrowleft']) moveX = -1;
+            if (keys['d'] || keys['arrowright']) moveX = 1;
+
+            if (moveX || moveZ) {
+                const speed = 24;
+                playerBody.velocity.x = moveX * speed;
+                playerBody.velocity.z = moveZ * speed;
+                if (Math.random() < 0.1) playSound(750, 40);
+            }
+
+            playerMesh.position.copy(playerBody.position);
+            playerMesh.quaternion.copy(playerBody.quaternion);
+
+            // AI
+            aiChickens.forEach(ai => {
+                if (ai.health <= 0) return;
+                const toP = new CANNON.Vec3().copy(playerBody.position).vsub(ai.body.position).unit();
+                ai.body.velocity.x = toP.x * 11 + (Math.random()-0.5)*5;
+                ai.body.velocity.z = toP.z * 11 + (Math.random()-0.5)*5;
+
+                ai.mesh.position.copy(ai.body.position);
+                ai.mesh.quaternion.copy(ai.body.quaternion);
+            });
+
+            checkCollisions();
+            updateCamera();
+
+            document.getElementById('status').textContent = `Score: ${score} | Alive: ${aiChickens.length}`;
+
+            if (aiChickens.length === 0) {
+                gameOverFlag = true;
+                coins += 50 + currentLevel * 30;
+                document.getElementById("coin-count").textContent = coins;
+                document.getElementById('win-text').innerHTML = `You survived <strong>${levels[currentLevel].name}</strong>!<br>+${50 + currentLevel * 30} coins`;
+                document.getElementById('win').style.display = 'block';
+                saveGame();
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // ============== SHOP ==============
+        function renderShop() {
+            const grid = document.getElementById("skin-grid");
+            grid.innerHTML = "";
+
+            skins.forEach(skin => {
+                const card = document.createElement("div");
+                card.className = `skin-card ${skin.unlocked ? '' : 'locked'} ${currentSkin === skin.id ? 'equipped' : ''}`;
+                
+                card.innerHTML = `
+                    <div class="skin-preview" style="background:${skin.color.toString(16).padStart(6,'0')}"></div>
+                    <div class="skin-name">${skin.name}</div>
+                    ${skin.price === 0 ? '<div style="color:#0f0">Free</div>' : 
+                      skin.unlocked ? '<div style="color:#0f0">Unlocked</div>' : 
+                      `<div class="skin-price">💰 ${skin.price} coins</div>`}
+                `;
+
+                card.onclick = () => {
+                    if (!skin.unlocked) {
+                        if (coins >= skin.price) {
+                            coins -= skin.price;
+                            skin.unlocked = true;
+                            document.getElementById("coin-count").textContent = coins;
+                            renderShop();
+                            saveGame();
+                            alert(`Unlocked ${skin.name}!`);
+                        } else {
+                            alert("Not enough coins!");
+                        }
+                    } else {
+                        currentSkin = skin.id;
+                        renderShop();
+                        saveGame();
+                        alert(`Equipped ${skin.name}`);
+                        // Restart current level with new skin
+                        createArena(currentLevel);
+                    }
+                };
+                grid.appendChild(card);
+            });
+        }
+
+        window.toggleShop = function() {
+            const shop = document.getElementById("shop");
+            shop.style.display = shop.style.display === "block" ? "none" : "block";
+            if (shop.style.display === "block") renderShop();
+        };
+
+        window.nextLevel = function() {
+            document.getElementById('win').style.display = 'none';
+            currentLevel = Math.min(currentLevel + 1, levels.length - 1);
+            gameOverFlag = false;
+            createArena(currentLevel);
+        };
+
+        window.restart = function() {
+            document.getElementById('gameover').style.display = 'none';
+            currentLevel = 0;
+            score = 0;
+            gameOverFlag = false;
+            createArena(0);
+        };
+
+        // ============== START GAME ==============
+        loadSave();
+        initScene();
+        createArena(0);
+        animate();
+
+        console.log("%cCrazy Chicken 3D with Skin Shop loaded! 🐔🛒", "color:#ffaa00; font-size:18px");
+    </script>
 </body>
 </html>
